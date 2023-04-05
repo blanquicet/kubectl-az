@@ -1,7 +1,7 @@
 name: Microsoft Azure CLI kubectl plugin CI
 env:
   GO_VERSION: 1.17 # TODO: Update
-  AZURE_PREFIX: kubectl-az-ci
+  AZURE_PREFIX: blanquicet-kubectl-az-ci
 concurrency:
   # Only one workflow can run at a time unless
   # we create a new AKS cluster per github_ref (branch)
@@ -210,12 +210,18 @@ jobs:
     - uses: actions/checkout@v3
     - name: Get all artifacts.
       uses: actions/download-artifact@v3
+    - name: Test
+      shell: bash
+      run: ls -laR
     - name: Rename all artifacts to kubectl-az-${{ github.ref_name }}.tar.gz
       shell: bash
       run: |
         for i in kubectl-az-*-*-tar-gz/kubectl-az-*-*.tar.gz; do
           mv $i $(dirname $i)/$(basename $i .tar.gz)-${{ github.ref_name }}.tar.gz
         done
+    - name: Test after rename
+      shell: bash
+      run: ls -laR
     - name: Create Release
       id: create_release
       uses: softprops/action-gh-release@v1

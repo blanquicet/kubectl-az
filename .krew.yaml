@@ -4,7 +4,7 @@ metadata:
   name: az
 spec:
   version: {{ .TagName }}
-  homepage: https://github.com/Azure/kubectl-az
+  homepage: https://github.com/blanquicet/kubectl-az
   shortDescription: Interact with an AKS cluster
   description: |
     This plugin provides a set of commands that can be used to debug an AKS
@@ -19,17 +19,17 @@ spec:
       matchLabels:
         os: linux
         arch: amd64
-    {{addURIAndSha "https://github.com/Azure/kubectl-az/releases/download/{{ .TagName }}/kubectl-az-linux-amd64-{{ .TagName }}.tar.gz" .TagName }}
+    {{addURIAndSha "https://github.com/blanquicet/kubectl-az/releases/download/{{ .TagName }}/kubectl-az-linux-amd64-{{ .TagName }}.tar.gz" .TagName }}
     bin: kubectl-az
   - selector:
       matchLabels:
         os: darwin
         arch: amd64
-    {{addURIAndSha "https://github.com/Azure/kubectl-az/releases/download/{{ .TagName }}/kubectl-az-darwin-amd64-{{ .TagName }}.tar.gz" .TagName }}
+    {{addURIAndSha "https://github.com/blanquicet/kubectl-az/releases/download/{{ .TagName }}/kubectl-az-darwin-amd64-{{ .TagName }}.tar.gz" .TagName }}
     bin: kubectl-az
   - selector:
       matchLabels:
         os: windows
         arch: amd64
-    {{addURIAndSha "https://github.com/Azure/kubectl-az/releases/download/{{ .TagName }}/kubectl-az-windows-amd64-{{ .TagName }}.tar.gz" .TagName }}
+    {{addURIAndSha "https://github.com/blanquicet/kubectl-az/releases/download/{{ .TagName }}/kubectl-az-windows-amd64-{{ .TagName }}.tar.gz" .TagName }}
     bin: kubectl-az
