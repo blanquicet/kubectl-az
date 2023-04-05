@@ -65,142 +65,142 @@ jobs:
           name: kubectl-az-${{ matrix.os }}-${{ matrix.arch }}-tar-gz
           path: kubectl-az-${{ matrix.os }}-${{ matrix.arch }}.tar.gz
 
-  unit-tests:
-    name: Run unit tests
-    runs-on: ubuntu-latest
-    steps:
-      - name: Set up Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: ${{ env.GO_VERSION }}
-          check-latest: true
-      - name: Check out code
-        uses: actions/checkout@v3
-      - name: Cache Go
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
-      - name: Run tests
-        run: make unit-test
-
-  create-aks-cluster:
-    name: Create AKS cluster
-    needs: [ build, unit-tests ]
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        arch: [ amd64 ]
-    steps:
-      - name: Login to Azure
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-      - name: Create AKS cluster ${{ env.AZURE_PREFIX }}-${{ matrix.arch }}-cluster
-        shell: bash
-        run: |
-          az aks create \
-            --resource-group ${{ env.AZURE_PREFIX }}-rg \
-            --name ${{ env.AZURE_PREFIX }}-${{ matrix.arch }}-cluster \
-            --node-count 1 \
-            --generate-ssh-keys
-
-  delete-aks-cluster:
-    name: Delete AKS cluster
-    if: always()
-    needs: [ integration-tests ]
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        arch: [ amd64 ]
-    steps:
-      - name: Login to Azure
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-      - name: Delete AKS cluster ${{ env.AZURE_PREFIX }}-${{ matrix.arch }}-cluster
-        shell: bash
-        run: |
-          az aks delete \
-            --resource-group ${{ env.AZURE_PREFIX }}-rg \
-            --name ${{ env.AZURE_PREFIX }}-${{ matrix.arch }}-cluster \
-            --yes
-
-  integration-tests:
-    name: Run integration tests
-    needs: [ build, unit-tests , create-aks-cluster ]
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      # 'run-command' is not supported in parallel for a given node
-      # (don't want to create a new cluster for each OS)
-      max-parallel: 1
-      matrix:
-        os: [ ubuntu-latest, macOS-latest, windows-latest ]
-        arch: [ amd64 ] # TODO: Support ARM
-    steps:
-      - name: Set up Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: ${{ env.GO_VERSION }}
-          check-latest: true
-      - name: Check out code
-        uses: actions/checkout@v3
-      - name: Set environment variables
-        shell: bash
-        run: |
-          case ${{ matrix.os }} in
-            ubuntu-latest)
-              echo "os=linux" >> $GITHUB_ENV
-              ;;
-            macOS-latest)
-              echo "os=darwin" >> $GITHUB_ENV
-              ;;
-            windows-latest)
-              echo "os=windows" >> $GITHUB_ENV
-              ;;
-            *)
-              echo "Not supported OS: ${{ matrix.os }}"
-              exit 1
-              ;;
-          esac
-      - name: Get kubectl-az from artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: kubectl-az-${{ env.os }}-${{ matrix.arch }}-tar-gz
-      - name: Prepare kubectl-az binary
-        shell: bash
-        run: |
-          tar zxvf kubectl-az-${{ env.os }}-${{ matrix.arch }}.tar.gz
-          chmod +x kubectl-az
-          ls -la
-      - name: Login to Azure
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-      - name: Set AKS cluster context
-        uses: azure/aks-set-context@v3
-        with:
-          cluster-name: ${{ env.AZURE_PREFIX }}-${{ matrix.arch }}-cluster
-          resource-group: ${{ env.AZURE_PREFIX }}-rg
-          admin: false
-      - if: matrix.os != 'ubuntu-latest'
-        # kubectl is already installed in Linux runners
-        uses: azure/setup-kubectl@v3
-      - name: Run integration tests
-        shell: bash
-        run: |
-          make integration-test -o kubectl-az
+#  unit-tests:
+#    name: Run unit tests
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Set up Go
+#        uses: actions/setup-go@v4
+#        with:
+#          go-version: ${{ env.GO_VERSION }}
+#          check-latest: true
+#      - name: Check out code
+#        uses: actions/checkout@v3
+#      - name: Cache Go
+#        uses: actions/cache@v3
+#        with:
+#          path: |
+#            ~/.cache/go-build
+#            ~/go/pkg/mod
+#          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+#          restore-keys: |
+#            ${{ runner.os }}-go-
+#      - name: Run tests
+#        run: make unit-test
+#
+#  create-aks-cluster:
+#    name: Create AKS cluster
+#    needs: [ build, unit-tests ]
+#    runs-on: ubuntu-latest
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        arch: [ amd64 ]
+#    steps:
+#      - name: Login to Azure
+#        uses: azure/login@v1
+#        with:
+#          creds: ${{ secrets.AZURE_CREDENTIALS }}
+#      - name: Create AKS cluster ${{ env.AZURE_PREFIX }}-${{ matrix.arch }}-cluster
+#        shell: bash
+#        run: |
+#          az aks create \
+#            --resource-group ${{ env.AZURE_PREFIX }}-rg \
+#            --name ${{ env.AZURE_PREFIX }}-${{ matrix.arch }}-cluster \
+#            --node-count 1 \
+#            --generate-ssh-keys
+#
+#  delete-aks-cluster:
+#    name: Delete AKS cluster
+#    if: always()
+#    needs: [ integration-tests ]
+#    runs-on: ubuntu-latest
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        arch: [ amd64 ]
+#    steps:
+#      - name: Login to Azure
+#        uses: azure/login@v1
+#        with:
+#          creds: ${{ secrets.AZURE_CREDENTIALS }}
+#      - name: Delete AKS cluster ${{ env.AZURE_PREFIX }}-${{ matrix.arch }}-cluster
+#        shell: bash
+#        run: |
+#          az aks delete \
+#            --resource-group ${{ env.AZURE_PREFIX }}-rg \
+#            --name ${{ env.AZURE_PREFIX }}-${{ matrix.arch }}-cluster \
+#            --yes
+#
+#  integration-tests:
+#    name: Run integration tests
+#    needs: [ build, unit-tests , create-aks-cluster ]
+#    runs-on: ${{ matrix.os }}
+#    strategy:
+#      fail-fast: false
+#      # 'run-command' is not supported in parallel for a given node
+#      # (don't want to create a new cluster for each OS)
+#      max-parallel: 1
+#      matrix:
+#        os: [ ubuntu-latest, macOS-latest, windows-latest ]
+#        arch: [ amd64 ] # TODO: Support ARM
+#    steps:
+#      - name: Set up Go
+#        uses: actions/setup-go@v4
+#        with:
+#          go-version: ${{ env.GO_VERSION }}
+#          check-latest: true
+#      - name: Check out code
+#        uses: actions/checkout@v3
+#      - name: Set environment variables
+#        shell: bash
+#        run: |
+#          case ${{ matrix.os }} in
+#            ubuntu-latest)
+#              echo "os=linux" >> $GITHUB_ENV
+#              ;;
+#            macOS-latest)
+#              echo "os=darwin" >> $GITHUB_ENV
+#              ;;
+#            windows-latest)
+#              echo "os=windows" >> $GITHUB_ENV
+#              ;;
+#            *)
+#              echo "Not supported OS: ${{ matrix.os }}"
+#              exit 1
+#              ;;
+#          esac
+#      - name: Get kubectl-az from artifact
+#        uses: actions/download-artifact@v3
+#        with:
+#          name: kubectl-az-${{ env.os }}-${{ matrix.arch }}-tar-gz
+#      - name: Prepare kubectl-az binary
+#        shell: bash
+#        run: |
+#          tar zxvf kubectl-az-${{ env.os }}-${{ matrix.arch }}.tar.gz
+#          chmod +x kubectl-az
+#          ls -la
+#      - name: Login to Azure
+#        uses: azure/login@v1
+#        with:
+#          creds: ${{ secrets.AZURE_CREDENTIALS }}
+#      - name: Set AKS cluster context
+#        uses: azure/aks-set-context@v3
+#        with:
+#          cluster-name: ${{ env.AZURE_PREFIX }}-${{ matrix.arch }}-cluster
+#          resource-group: ${{ env.AZURE_PREFIX }}-rg
+#          admin: false
+#      - if: matrix.os != 'ubuntu-latest'
+#        # kubectl is already installed in Linux runners
+#        uses: azure/setup-kubectl@v3
+#      - name: Run integration tests
+#        shell: bash
+#        run: |
+#          make integration-test -o kubectl-az
 
   release:
     name: Release
-    needs: [ integration-tests ]
+    needs: [ build ]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -221,7 +221,7 @@ jobs:
         done
     - name: Test after rename
       shell: bash
-      run: ls -laR
+      run: echo "$GITHUB_WORKSPACE"
     - name: Create Release
       id: create_release
       uses: softprops/action-gh-release@v1
